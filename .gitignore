@@ -39,3 +39,19 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local sqlite database
+/data
+
+# editor / agent tooling (machine-specific)
+.codex/
+.cursor/
+.gemini/
+.zed/
+.vscode/
+.mcp.json
+opencode.json
+config/
+
+# reference assets (not part of the app)
+image.png

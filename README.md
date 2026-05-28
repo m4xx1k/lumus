@@ -1,36 +1,84 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ✦ Lumos
 
-## Getting Started
+Платформа для вивчення математики з AI-репетитором. Студент обирає тему,
+розв'язує задачу, отримує миттєвий розбір відповіді від AI та може поставити
+будь-яке питання у чаті, де модель діє як персональний репетитор.
 
-First, run the development server:
+> MVP для дипломної роботи. Мова інтерфейсу — українська. Рівень тем —
+> професійна освіта / коледж.
+
+## Можливості
+
+- **Головна** — фіолетовий hero, статистика та сітка карток тем.
+- **Сторінка теми** — фото/іконка, теорія, задача та поле для введення відповіді.
+- **Перевірка відповіді** — відповідь надсилається в AI, який повертає вердикт
+  (правильно / ні) + коротке пояснення.
+- **Чат-репетитор** — діалог із AI; у системний промпт закладено теорію теми та
+  роль терплячого репетитора.
+- **Адмін-панель** (`/admin`) — CRUD тем: назва, емодзі, фото (URL), опис,
+  теорія, завдання, правильна відповідь, підказка. Лінк є на головній.
+- **SQLite** — теми зберігаються в локальній БД (`data/lumos.db`), яка
+  автоматично наповнюється початковими темами при першому запуску.
+- **Демо-режим (mock)** — без API-ключа застосунок повністю працює зі
+  спрощеними відповідями.
+
+## Технології
+
+- [Next.js 16](https://nextjs.org) (App Router, TypeScript, Server Actions)
+- [Tailwind CSS v4](https://tailwindcss.com) — фіолетова тема
+- Шрифти: [Unbounded](https://fonts.google.com/specimen/Unbounded) (заголовки) +
+  [Inter](https://fonts.google.com/specimen/Inter) (текст)
+- [better-sqlite3](https://github.com/WiseLibs/better-sqlite3) — зберігання тем
+- [Vercel AI SDK v6](https://ai-sdk.dev) + провайдер [Google Gemini](https://ai-sdk.dev/providers/ai-sdk-providers/google-generative-ai)
+
+## Запуск
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Відкрий [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Підключення AI (Google Gemini)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Без ключа застосунок працює в демо-режимі. Щоб увімкнути справжній AI:
 
-## Learn More
+1. Отримай безкоштовний ключ у [Google AI Studio](https://aistudio.google.com/apikey).
+2. Скопіюй `.env.example` у `.env.local` і встав ключ:
 
-To learn more about Next.js, take a look at the following resources:
+   ```env
+   GOOGLE_GENERATIVE_AI_API_KEY=твій_ключ
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+3. Перезапусти `npm run dev`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Структура проєкту
 
-## Deploy on Vercel
+```
+src/
+├── app/
+│   ├── page.tsx                 # головна — hero + теми з БД
+│   ├── topic/[id]/
+│   │   ├── page.tsx             # сторінка теми (server component)
+│   │   └── TopicView.tsx        # перевірка відповіді + чат (client)
+│   ├── admin/
+│   │   ├── page.tsx             # список тем + видалення
+│   │   ├── new/page.tsx         # створення теми
+│   │   ├── [id]/edit/page.tsx   # редагування теми
+│   │   ├── TopicForm.tsx        # форма теми (спільна)
+│   │   └── actions.ts           # server actions: create / update / delete
+│   └── api/
+│       ├── check/route.ts       # перевірка відповіді (generateObject)
+│       └── chat/route.ts        # стрімінговий чат (streamText)
+└── lib/
+    ├── db.ts                    # SQLite: ініціалізація, seed, CRUD
+    ├── topics.ts                # тип Topic + початкові (seed) дані
+    ├── ai.ts                    # налаштування провайдера + детект ключа
+    └── prompts.ts               # системні промпти репетитора
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## База даних
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Файл `data/lumos.db` створюється автоматично і додається в `.gitignore`.
+Щоб скинути теми до початкових — видали файл і перезапусти застосунок.
