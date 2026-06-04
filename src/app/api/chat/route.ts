@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     topicId,
   }: { messages: UIMessage[]; topicId: string } = await req.json();
 
-  const topic = getTopic(topicId);
+  const topic = await getTopic(topicId);
   if (!topic) {
     return Response.json({ error: "Тему не знайдено" }, { status: 404 });
   }

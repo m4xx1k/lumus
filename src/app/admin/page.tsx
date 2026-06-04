@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { getAllTopics } from "@/lib/db";
 import { deleteTopicAction } from "./actions";
+import { logoutAction } from "./auth";
 
 export const dynamic = "force-dynamic";
 
-export default function AdminPage() {
-  const topics = getAllTopics();
+export default async function AdminPage() {
+  const topics = await getAllTopics();
 
   return (
     <main className="mx-auto w-full max-w-4xl px-5 py-8">
@@ -16,14 +17,24 @@ export default function AdminPage() {
         ← На головну
       </Link>
 
-      <div className="mt-4 mb-8 flex items-center justify-between">
+      <div className="mt-4 mb-8 flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-3xl font-extrabold">Адмін-панель</h1>
-        <Link
-          href="/admin/new"
-          className="rounded-xl bg-brand-600 px-5 py-2.5 font-semibold text-white transition hover:bg-brand-700"
-        >
-          + Нова тема
-        </Link>
+        <div className="flex items-center gap-2">
+          <form action={logoutAction}>
+            <button
+              type="submit"
+              className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
+            >
+              Вийти
+            </button>
+          </form>
+          <Link
+            href="/admin/new"
+            className="rounded-xl bg-brand-600 px-5 py-2.5 font-semibold text-white transition hover:bg-brand-700"
+          >
+            + Нова тема
+          </Link>
+        </div>
       </div>
 
       <ul className="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white">

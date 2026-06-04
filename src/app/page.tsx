@@ -3,8 +3,8 @@ import { getAllTopics } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-export default function Home() {
-  const topics = getAllTopics();
+export default async function Home() {
+  const topics = await getAllTopics();
 
   return (
     <div className="flex flex-col">

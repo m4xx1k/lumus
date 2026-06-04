@@ -1,32 +1,31 @@
 import "server-only";
-import Database from "better-sqlite3";
-import path from "node:path";
-import fs from "node:fs";
+import { createClient, type Client } from "@libsql/client";
 import { seedTopics, type Topic } from "./topics";
 
-// На Vercel/serverless писати можна ЛИШЕ в /tmp (решта ФС — read-only).
-// Локально тримаємо БД у каталозі data/ в корені проєкту.
-// Шлях можна перевизначити через env DB_PATH (напр. том на хостингу).
-function resolveDbPath(): string {
-  if (process.env.DB_PATH) return process.env.DB_PATH;
-  const base = process.env.VERCEL ? "/tmp" : path.join(process.cwd(), "data");
-  return path.join(base, "lumos.db");
+// БД працює через libSQL (Turso). На проді задаємо TURSO_DATABASE_URL (libsql://…)
+// та TURSO_AUTH_TOKEN. Якщо їх немає — локально відкриваємо вбудований файл SQLite,
+// тож розробка працює «з коробки» без жодних креденшелів.
+function makeClient(): Client {
+  const url = process.env.TURSO_DATABASE_URL || "file:data/lumos.db";
+  const authToken = process.env.TURSO_AUTH_TOKEN;
+  return createClient({ url, authToken });
 }
 
-let _db: Database.Database | null = null;
+let _client: Client | null = null;
+let _ready: Promise<Client> | null = null;
 
-// Лінива ініціалізація: БД відкривається при першому запиті, а не при імпорті
-// модуля. Так помилка ФС не «вбиває» весь застосунок на етапі завантаження.
-function getDb(): Database.Database {
-  if (_db) return _db;
+// Лінива ініціалізація: створюємо клієнт, таблицю й засіваємо дані при першому
+// запиті. Проміс кешуємо, щоб паралельні виклики не ініціалізували двічі.
+function getDb(): Promise<Client> {
+  if (_client) return Promise.resolve(_client);
+  if (!_ready) _ready = init();
+  return _ready;
+}
 
-  const dbPath = resolveDbPath();
-  fs.mkdirSync(path.dirname(dbPath), { recursive: true });
+async function init(): Promise<Client> {
+  const client = makeClient();
 
-  const db = new Database(dbPath);
-  db.pragma("journal_mode = WAL");
-
-  db.exec(`
+  await client.execute(`
     CREATE TABLE IF NOT EXISTS topics (
       id        TEXT PRIMARY KEY,
       title     TEXT NOT NULL,
@@ -42,36 +41,47 @@ function getDb(): Database.Database {
   `);
 
   // Наповнюємо базу початковими темами лише якщо вона порожня.
-  const count = db.prepare("SELECT COUNT(*) AS n FROM topics").get() as {
-    n: number;
-  };
-  if (count.n === 0) {
-    const insert = db.prepare(`
-      INSERT INTO topics (id, title, emoji, imageUrl, short, theory, question, answer, hint, createdAt)
-      VALUES (@id, @title, @emoji, @imageUrl, @short, @theory, @question, @answer, @hint, @createdAt)
-    `);
-    const seedAll = db.transaction((rows: Topic[]) => {
-      rows.forEach((t, i) =>
-        insert.run({ ...t, createdAt: 1_700_000_000_000 + i }),
-      );
-    });
-    seedAll(seedTopics);
+  const countRes = await client.execute("SELECT COUNT(*) AS n FROM topics");
+  const n = Number(countRes.rows[0].n);
+  if (n === 0) {
+    await client.batch(
+      seedTopics.map((t, i) => ({
+        sql: `INSERT INTO topics (id, title, emoji, imageUrl, short, theory, question, answer, hint, createdAt)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        args: [
+          t.id,
+          t.title,
+          t.emoji,
+          t.imageUrl,
+          t.short,
+          t.theory,
+          t.question,
+          t.answer,
+          t.hint,
+          1_700_000_000_000 + i,
+        ],
+      })),
+      "write",
+    );
   }
 
-  _db = db;
-  return db;
+  _client = client;
+  return client;
 }
 
-export function getAllTopics(): Topic[] {
-  return getDb()
-    .prepare("SELECT * FROM topics ORDER BY createdAt ASC")
-    .all() as Topic[];
+export async function getAllTopics(): Promise<Topic[]> {
+  const db = await getDb();
+  const res = await db.execute("SELECT * FROM topics ORDER BY createdAt ASC");
+  return res.rows as unknown as Topic[];
 }
 
-export function getTopic(id: string): Topic | undefined {
-  return getDb().prepare("SELECT * FROM topics WHERE id = ?").get(id) as
-    | Topic
-    | undefined;
+export async function getTopic(id: string): Promise<Topic | undefined> {
+  const db = await getDb();
+  const res = await db.execute({
+    sql: "SELECT * FROM topics WHERE id = ?",
+    args: [id],
+  });
+  return (res.rows[0] as unknown as Topic) ?? undefined;
 }
 
 export type TopicInput = Omit<Topic, "id"> & { id?: string };
@@ -87,53 +97,60 @@ function slugify(s: string): string {
   );
 }
 
-export function createTopic(input: TopicInput, createdAt: number): string {
+export async function createTopic(
+  input: TopicInput,
+  createdAt: number,
+): Promise<string> {
   let id = input.id?.trim() || slugify(input.title);
   // Гарантуємо унікальність id.
   let suffix = 1;
-  while (getTopic(id)) id = `${slugify(input.title)}-${++suffix}`;
+  while (await getTopic(id)) id = `${slugify(input.title)}-${++suffix}`;
 
-  getDb()
-    .prepare(`
-      INSERT INTO topics (id, title, emoji, imageUrl, short, theory, question, answer, hint, createdAt)
-      VALUES (@id, @title, @emoji, @imageUrl, @short, @theory, @question, @answer, @hint, @createdAt)
-    `)
-    .run({
+  const db = await getDb();
+  await db.execute({
+    sql: `INSERT INTO topics (id, title, emoji, imageUrl, short, theory, question, answer, hint, createdAt)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    args: [
       id,
-      title: input.title,
-      emoji: input.emoji || "📘",
-      imageUrl: input.imageUrl || null,
-      short: input.short,
-      theory: input.theory,
-      question: input.question,
-      answer: input.answer,
-      hint: input.hint,
+      input.title,
+      input.emoji || "📘",
+      input.imageUrl || null,
+      input.short,
+      input.theory,
+      input.question,
+      input.answer,
+      input.hint,
       createdAt,
-    });
+    ],
+  });
   return id;
 }
 
-export function updateTopic(id: string, input: TopicInput): void {
-  getDb()
-    .prepare(`
-      UPDATE topics SET
-        title = @title, emoji = @emoji, imageUrl = @imageUrl, short = @short,
-        theory = @theory, question = @question, answer = @answer, hint = @hint
-      WHERE id = @id
-    `)
-    .run({
+export async function updateTopic(
+  id: string,
+  input: TopicInput,
+): Promise<void> {
+  const db = await getDb();
+  await db.execute({
+    sql: `UPDATE topics SET
+            title = ?, emoji = ?, imageUrl = ?, short = ?,
+            theory = ?, question = ?, answer = ?, hint = ?
+          WHERE id = ?`,
+    args: [
+      input.title,
+      input.emoji || "📘",
+      input.imageUrl || null,
+      input.short,
+      input.theory,
+      input.question,
+      input.answer,
+      input.hint,
       id,
-      title: input.title,
-      emoji: input.emoji || "📘",
-      imageUrl: input.imageUrl || null,
-      short: input.short,
-      theory: input.theory,
-      question: input.question,
-      answer: input.answer,
-      hint: input.hint,
-    });
+    ],
+  });
 }
 
-export function deleteTopic(id: string): void {
-  getDb().prepare("DELETE FROM topics WHERE id = ?").run(id);
+export async function deleteTopic(id: string): Promise<void> {
+  const db = await getDb();
+  await db.execute({ sql: "DELETE FROM topics WHERE id = ?", args: [id] });
 }

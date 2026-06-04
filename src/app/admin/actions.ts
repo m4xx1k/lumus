@@ -26,7 +26,7 @@ function parse(formData: FormData): TopicInput {
 export async function createTopicAction(formData: FormData) {
   const input = parse(formData);
   if (!input.title) return;
-  createTopic(input, 1_700_000_000_000 + Date.now() % 1_000_000_000);
+  await createTopic(input, 1_700_000_000_000 + (Date.now() % 1_000_000_000));
   revalidatePath("/");
   revalidatePath("/admin");
   redirect("/admin");
@@ -35,7 +35,7 @@ export async function createTopicAction(formData: FormData) {
 export async function updateTopicAction(id: string, formData: FormData) {
   const input = parse(formData);
   if (!input.title) return;
-  updateTopic(id, input);
+  await updateTopic(id, input);
   revalidatePath("/");
   revalidatePath("/admin");
   revalidatePath(`/topic/${id}`);
@@ -45,7 +45,7 @@ export async function updateTopicAction(id: string, formData: FormData) {
 export async function deleteTopicAction(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (id) {
-    deleteTopic(id);
+    await deleteTopic(id);
     revalidatePath("/");
     revalidatePath("/admin");
   }

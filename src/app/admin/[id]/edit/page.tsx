@@ -12,7 +12,7 @@ export default async function EditTopicPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const topic = getTopic(id);
+  const topic = await getTopic(id);
   if (!topic) notFound();
 
   const action = updateTopicAction.bind(null, id);
