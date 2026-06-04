@@ -1,5 +1,26 @@
 import type { Topic } from "./topics";
 
+// Теорія/питання тепер можуть містити HTML (rich-редактор). Для AI-моделі
+// прибираємо теги й перетворюємо контент на чистий текст, зберігаючи структуру:
+// блоки → переноси рядків, <li> → «- », картинки відкидаємо.
+function htmlToText(html: string): string {
+  if (!html) return "";
+  return html
+    .replace(/<\s*(br|\/p|\/h[1-6]|\/li|\/div|\/blockquote)\s*>/gi, "\n")
+    .replace(/<\s*li[^>]*>/gi, "- ")
+    .replace(/<img[^>]*>/gi, " [зображення] ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\n{3,}/g, "\n\n")
+    .replace(/[ \t]+\n/g, "\n")
+    .trim();
+}
+
 // Спільний системний промпт: модель діє як доброзичливий репетитор з математики.
 export function tutorSystemPrompt(topic: Topic): string {
   return [
@@ -9,8 +30,8 @@ export function tutorSystemPrompt(topic: Topic): string {
     "Відповідай коротко й по суті, використовуй прості позначення для формул.",
     "",
     `Поточна тема: «${topic.title}».`,
-    `Теорія теми: ${topic.theory}`,
-    `Задача, над якою працює студент: ${topic.question}`,
+    `Теорія теми: ${htmlToText(topic.theory)}`,
+    `Задача, над якою працює студент: ${htmlToText(topic.question)}`,
   ].join("\n");
 }
 
@@ -18,7 +39,7 @@ export function tutorSystemPrompt(topic: Topic): string {
 export function checkAnswerPrompt(topic: Topic, userAnswer: string): string {
   return [
     `Тема: ${topic.title}.`,
-    `Задача: ${topic.question}`,
+    `Задача: ${htmlToText(topic.question)}`,
     `Правильна відповідь: ${topic.answer}`,
     `Відповідь студента: ${userAnswer}`,
     "",

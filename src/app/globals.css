@@ -25,3 +25,82 @@ body {
 .font-display {
   font-family: var(--font-display);
 }
+
+/* Стилі контенту, створеного rich-редактором (TipTap) — і в редакторі, і при
+   відображенні на сторінці теми (.richtext). Гарне типографічне оформлення. */
+.richtext {
+  color: var(--color-slate-700, #334155);
+  line-height: 1.7;
+}
+.richtext > :first-child {
+  margin-top: 0;
+}
+.richtext > :last-child {
+  margin-bottom: 0;
+}
+.richtext p {
+  margin: 0.75em 0;
+}
+.richtext h2 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 1.2em 0 0.5em;
+  color: #0f172a;
+}
+.richtext h3 {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 1em 0 0.4em;
+  color: #0f172a;
+}
+.richtext strong {
+  font-weight: 700;
+  color: #0f172a;
+}
+.richtext em {
+  font-style: italic;
+}
+.richtext ul,
+.richtext ol {
+  margin: 0.75em 0;
+  padding-left: 1.5em;
+}
+.richtext ul {
+  list-style: disc;
+}
+.richtext ol {
+  list-style: decimal;
+}
+.richtext li {
+  margin: 0.25em 0;
+}
+.richtext li > p {
+  margin: 0;
+}
+.richtext blockquote {
+  border-left: 3px solid var(--color-brand-300);
+  background: var(--color-brand-50);
+  padding: 0.5em 1em;
+  margin: 1em 0;
+  border-radius: 0 0.5rem 0.5rem 0;
+  color: #475569;
+}
+.richtext img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.75rem;
+  margin: 1em 0;
+}
+.richtext a {
+  color: var(--color-brand-700);
+  text-decoration: underline;
+}
+.richtext code {
+  background: #f1f5f9;
+  padding: 0.1em 0.35em;
+  border-radius: 0.35rem;
+  font-size: 0.9em;
+}

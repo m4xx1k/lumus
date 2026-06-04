@@ -36,7 +36,10 @@ export default async function TopicPage({
           <span aria-hidden>{topic.emoji}</span>
           {topic.title}
         </h1>
-        <p className="mt-4 leading-relaxed text-slate-600">{topic.theory}</p>
+        <div
+          className="richtext mt-4 text-slate-600"
+          dangerouslySetInnerHTML={{ __html: topic.theory }}
+        />
       </header>
 
       <TopicView topic={topic} />

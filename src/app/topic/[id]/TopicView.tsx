@@ -49,7 +49,10 @@ function AnswerCard({ topic }: { topic: Topic }) {
       <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">
         Задача
       </h2>
-      <p className="mt-2 text-lg font-medium">{topic.question}</p>
+      <div
+        className="richtext mt-2 text-lg font-medium text-slate-800"
+        dangerouslySetInnerHTML={{ __html: topic.question }}
+      />
 
       <form onSubmit={handleCheck} className="mt-4 flex flex-col gap-3 sm:flex-row">
         <input

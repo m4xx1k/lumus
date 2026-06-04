@@ -1,4 +1,5 @@
 import type { Topic } from "@/lib/topics";
+import RichEditor from "./RichEditor";
 
 type Props = {
   action: (formData: FormData) => void;
@@ -81,20 +82,27 @@ export default function TopicForm({ action, topic, submitLabel }: Props) {
         defaultValue={topic?.short}
         placeholder="Один рядок про тему"
       />
-      <Field
-        label="Опис / теорія"
-        name="theory"
-        defaultValue={topic?.theory}
-        placeholder="Пояснення теми — піде і в чат-репетитор"
-        textarea
-      />
-      <Field
-        label="Завдання (умова задачі)"
-        name="question"
-        defaultValue={topic?.question}
-        placeholder="Напр. Знайдіть похідну f(x) = 3x² + 5x − 7"
-        textarea
-      />
+      <label className="block">
+        <span className="text-sm font-medium text-slate-700">
+          Опис / теорія
+        </span>
+        <RichEditor
+          name="theory"
+          defaultValue={topic?.theory}
+          placeholder="Пояснення теми — форматуй текст і вставляй картинки. Піде і в чат-репетитор."
+        />
+      </label>
+
+      <label className="block">
+        <span className="text-sm font-medium text-slate-700">
+          Завдання (умова задачі)
+        </span>
+        <RichEditor
+          name="question"
+          defaultValue={topic?.question}
+          placeholder="Напр. Знайдіть похідну f(x) = 3x² + 5x − 7"
+        />
+      </label>
       <div className="grid gap-5 sm:grid-cols-2">
         <Field
           label="Правильна відповідь"
