@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getAllTopics } from "@/lib/db";
+import { ProgressSummary, CompletedBadge } from "./Progress";
 
 export const dynamic = "force-dynamic";
 
@@ -67,6 +68,12 @@ export default async function Home() {
           Оберіть тему
         </h2>
 
+        {topics.length > 0 && (
+          <div className="mb-6">
+            <ProgressSummary total={topics.length} />
+          </div>
+        )}
+
         {topics.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-slate-300 p-10 text-center text-slate-500">
             Поки що немає тем. Додайте першу в{" "}
@@ -81,8 +88,9 @@ export default async function Home() {
               <li key={topic.id}>
                 <Link
                   href={`/topic/${topic.id}`}
-                  className="group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white transition hover:-translate-y-1 hover:border-brand-300 hover:shadow-lg hover:shadow-brand-100"
+                  className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white transition hover:-translate-y-1 hover:border-brand-300 hover:shadow-lg hover:shadow-brand-100"
                 >
+                  <CompletedBadge topicId={topic.id} />
                   {topic.imageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img

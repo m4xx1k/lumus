@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import type { Topic } from "@/lib/topics";
+import { markTopicCompleted } from "@/lib/progress";
 
 type CheckResult = { correct: boolean; explanation: string };
 
@@ -37,6 +38,7 @@ function AnswerCard({ topic }: { topic: Topic }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Помилка перевірки");
       setResult(data);
+      if (data.correct) markTopicCompleted(topic.id);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Щось пішло не так");
     } finally {
