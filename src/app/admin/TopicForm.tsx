@@ -82,7 +82,10 @@ export default function TopicForm({ action, topic, submitLabel }: Props) {
         defaultValue={topic?.short}
         placeholder="Один рядок про тему"
       />
-      <label className="block">
+      {/* НЕ <label>: лейбл, що огортає редактор, пересилає кліки на першу
+          кнопку всередині (Bold) — будь-який клік по полю тоглив би жирність.
+          Тому це звичайний <div> із підписом-текстом. */}
+      <div className="block">
         <span className="text-sm font-medium text-slate-700">
           Опис / теорія
         </span>
@@ -91,9 +94,9 @@ export default function TopicForm({ action, topic, submitLabel }: Props) {
           defaultValue={topic?.theory}
           placeholder="Пояснення теми — форматуй текст і вставляй картинки. Піде і в чат-репетитор."
         />
-      </label>
+      </div>
 
-      <label className="block">
+      <div className="block">
         <span className="text-sm font-medium text-slate-700">
           Завдання (умова задачі)
         </span>
@@ -102,7 +105,7 @@ export default function TopicForm({ action, topic, submitLabel }: Props) {
           defaultValue={topic?.question}
           placeholder="Напр. Знайдіть похідну f(x) = 3x² + 5x − 7"
         />
-      </label>
+      </div>
       <div className="grid gap-5 sm:grid-cols-2">
         <Field
           label="Правильна відповідь"

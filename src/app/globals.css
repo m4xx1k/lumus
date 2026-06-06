@@ -35,6 +35,15 @@ body {
 .richtext > :first-child {
   margin-top: 0;
 }
+/* Плейсхолдер від розширення Placeholder (@tiptap/extensions): малюється на
+   порожньому першому вузлі редактора, не займає місця й не ловить кліки. */
+.richtext .is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: #94a3b8; /* slate-400 */
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
 .richtext > :last-child {
   margin-bottom: 0;
 }

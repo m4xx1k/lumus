@@ -1,8 +1,14 @@
 "use client";
 
-import { useEditor, EditorContent, type Editor } from "@tiptap/react";
+import {
+  useEditor,
+  useEditorState,
+  EditorContent,
+  type Editor,
+} from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import ImageExtension from "@tiptap/extension-image";
+import { Placeholder } from "@tiptap/extensions";
 import { useRef } from "react";
 
 // WYSIWYG-редактор на TipTap. Зберігає HTML у прихований input із заданим `name`,
@@ -24,6 +30,10 @@ export default function RichEditor({
     extensions: [
       StarterKit,
       ImageExtension.configure({ inline: false, allowBase64: true }),
+      // Плейсхолдер малюється самим ProseMirror через CSS ::before на порожньому
+      // вузлі (клас .is-editor-empty + data-placeholder) — без React-оверлею, тож
+      // нема проблем зі «застиглим» станом і накладанням тексту.
+      Placeholder.configure({ placeholder: placeholder ?? "" }),
     ],
     content: defaultValue || "",
     editorProps: {
@@ -44,19 +54,27 @@ export default function RichEditor({
     <div className="mt-1.5 overflow-hidden rounded-xl border border-slate-300 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-100">
       <input type="hidden" name={name} defaultValue={defaultValue} ref={hiddenRef} />
       {editor && <Toolbar editor={editor} />}
-      <div className="relative">
-        {editor && editor.isEmpty && placeholder && (
-          <p className="pointer-events-none absolute left-0 top-0 px-4 py-3 text-slate-400">
-            {placeholder}
-          </p>
-        )}
-        <EditorContent editor={editor} />
-      </div>
+      <EditorContent editor={editor} />
     </div>
   );
 }
 
 function Toolbar({ editor }: { editor: Editor }) {
+  // Реактивні active-стани: інакше підсвітка кнопок (жирний, курсив тощо) не
+  // оновлюється при зміні виділення/курсору, бо v3 не ререндерить на транзакції.
+  const state = useEditorState({
+    editor,
+    selector: ({ editor }) => ({
+      bold: editor.isActive("bold"),
+      italic: editor.isActive("italic"),
+      h2: editor.isActive("heading", { level: 2 }),
+      h3: editor.isActive("heading", { level: 3 }),
+      bulletList: editor.isActive("bulletList"),
+      orderedList: editor.isActive("orderedList"),
+      blockquote: editor.isActive("blockquote"),
+    }),
+  });
+
   function addImageByUrl() {
     const url = window.prompt("Вкажи URL картинки:");
     if (url) editor.chain().focus().setImage({ src: url }).run();
@@ -78,14 +96,14 @@ function Toolbar({ editor }: { editor: Editor }) {
     <div className="flex flex-wrap items-center gap-1 border-b border-slate-200 bg-slate-50 px-2 py-1.5">
       <Btn
         onClick={() => editor.chain().focus().toggleBold().run()}
-        active={editor.isActive("bold")}
+        active={state.bold}
         title="Жирний"
       >
         <b>B</b>
       </Btn>
       <Btn
         onClick={() => editor.chain().focus().toggleItalic().run()}
-        active={editor.isActive("italic")}
+        active={state.italic}
         title="Курсив"
       >
         <i>I</i>
@@ -93,14 +111,14 @@ function Toolbar({ editor }: { editor: Editor }) {
       <Sep />
       <Btn
         onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-        active={editor.isActive("heading", { level: 2 })}
+        active={state.h2}
         title="Заголовок"
       >
         H2
       </Btn>
       <Btn
         onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-        active={editor.isActive("heading", { level: 3 })}
+        active={state.h3}
         title="Підзаголовок"
       >
         H3
@@ -108,21 +126,21 @@ function Toolbar({ editor }: { editor: Editor }) {
       <Sep />
       <Btn
         onClick={() => editor.chain().focus().toggleBulletList().run()}
-        active={editor.isActive("bulletList")}
+        active={state.bulletList}
         title="Маркований список"
       >
         • Список
       </Btn>
       <Btn
         onClick={() => editor.chain().focus().toggleOrderedList().run()}
-        active={editor.isActive("orderedList")}
+        active={state.orderedList}
         title="Нумерований список"
       >
         1. Список
       </Btn>
       <Btn
         onClick={() => editor.chain().focus().toggleBlockquote().run()}
-        active={editor.isActive("blockquote")}
+        active={state.blockquote}
         title="Цитата"
       >
         ❝
@@ -202,6 +220,9 @@ function Btn({
   return (
     <button
       type="button"
+      // Не даємо кнопці забирати фокус у редактора — інакше виділення збивається
+      // ще до того, як спрацює onClick (toggleBold і т.д.).
+      onMouseDown={(e) => e.preventDefault()}
       onClick={onClick}
       title={title}
       className={`min-w-8 rounded-md px-2 py-1 text-sm transition ${
