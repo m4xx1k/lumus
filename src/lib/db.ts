@@ -69,10 +69,20 @@ async function init(): Promise<Client> {
   return client;
 }
 
-export async function getAllTopics(): Promise<Topic[]> {
+export type TopicSummary = Pick<
+  Topic,
+  "id" | "title" | "emoji" | "imageUrl" | "short"
+>;
+
+// Легка вибірка для списків (головна, адмінка): без theory/question, у яких
+// можуть лежати мегабайти base64-картинок — інакше кожен рендер списку тягне
+// їх із Turso даремно.
+export async function getTopicSummaries(): Promise<TopicSummary[]> {
   const db = await getDb();
-  const res = await db.execute("SELECT * FROM topics ORDER BY createdAt ASC");
-  return res.rows as unknown as Topic[];
+  const res = await db.execute(
+    "SELECT id, title, emoji, imageUrl, short FROM topics ORDER BY createdAt ASC",
+  );
+  return res.rows as unknown as TopicSummary[];
 }
 
 export async function getTopic(id: string): Promise<Topic | undefined> {
@@ -86,12 +96,24 @@ export async function getTopic(id: string): Promise<Topic | undefined> {
 
 export type TopicInput = Omit<Topic, "id"> & { id?: string };
 
+// Транслітерація укр. літер у латиницю (спрощено за нац. стандартом).
+// Кириличні id ламали відкриття тем: Next віддає динамічний param
+// percent-encoded, і рядок не збігався зі значенням у БД.
+const TRANSLIT: Record<string, string> = {
+  а: "a", б: "b", в: "v", г: "h", ґ: "g", д: "d", е: "e", є: "ie",
+  ж: "zh", з: "z", и: "y", і: "i", ї: "i", й: "i", к: "k", л: "l",
+  м: "m", н: "n", о: "o", п: "p", р: "r", с: "s", т: "t", у: "u",
+  ф: "f", х: "kh", ц: "ts", ч: "ch", ш: "sh", щ: "shch", ь: "",
+  ю: "iu", я: "ia", ё: "e", ы: "y", э: "e", ъ: "",
+};
+
 function slugify(s: string): string {
   return (
     s
       .toLowerCase()
       .trim()
-      .replace(/[^a-z0-9а-яіїєґ]+/giu, "-")
+      .replace(/[а-яіїєґёыэъь]/g, (ch) => TRANSLIT[ch] ?? "")
+      .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "")
       .slice(0, 60) || "tema"
   );

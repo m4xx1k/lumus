@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTopic } from "@/lib/db";
+import { decodeSlug } from "@/lib/topics";
 import TopicForm from "../../TopicForm";
 import { updateTopicAction } from "../../actions";
 
@@ -11,7 +12,8 @@ export default async function EditTopicPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
+  const { id: rawId } = await params;
+  const id = decodeSlug(rawId);
   const topic = await getTopic(id);
   if (!topic) notFound();
 

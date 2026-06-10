@@ -1,6 +1,16 @@
 // Тип теми та початкові (seed) дані. Самі теми зберігаються в SQLite (див. db.ts),
 // а цей масив використовується лише для першого наповнення порожньої бази.
 
+// Next віддає динамічні params percent-encoded (кирилиця стає %D0%BF…),
+// а в БД id зберігається розкодованим — тому перед пошуком декодуємо.
+export function decodeSlug(raw: string): string {
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
+}
+
 export type Topic = {
   id: string;
   title: string;

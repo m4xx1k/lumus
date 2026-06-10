@@ -1,5 +1,6 @@
 import type { Topic } from "@/lib/topics";
 import RichEditor from "./RichEditor";
+import SubmitButton from "./SubmitButton";
 
 type Props = {
   action: (formData: FormData) => void;
@@ -121,12 +122,7 @@ export default function TopicForm({ action, topic, submitLabel }: Props) {
         />
       </div>
 
-      <button
-        type="submit"
-        className="rounded-xl bg-brand-600 px-6 py-2.5 font-semibold text-white transition hover:bg-brand-700"
-      >
-        {submitLabel}
-      </button>
+      <SubmitButton>{submitLabel}</SubmitButton>
     </form>
   );
 }

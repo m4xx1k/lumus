@@ -176,9 +176,10 @@ function Toolbar({ editor }: { editor: Editor }) {
 }
 
 // Стискаємо й зменшуємо зображення у браузері перед вставкою як data-URL:
-// зменшуємо до MAX по довшій стороні і кодуємо в JPEG. Так контент теми
-// лишається легким (не впирається в ліміт Server Actions і розмір рядка в БД).
-function compressImage(file: File, max = 1400, quality = 0.82): Promise<string> {
+// зменшуємо до MAX по довшій стороні і кодуємо у WebP (на ~30% легший за
+// JPEG тієї ж якості). Так контент теми лишається легким (не впирається в
+// ліміт Server Actions і розмір рядка в БД).
+function compressImage(file: File, max = 1400, quality = 0.8): Promise<string> {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
     const img = new Image();
@@ -192,11 +193,19 @@ function compressImage(file: File, max = 1400, quality = 0.82): Promise<string> 
       canvas.height = h;
       const ctx = canvas.getContext("2d");
       if (!ctx) return reject(new Error("no 2d context"));
-      // Білий фон, бо JPEG не має прозорості (інакше PNG-прозорість стане чорною).
+      // Білий фон: прозорість усе одно «з'їдається» (JPEG-фолбек її не має),
+      // а на білій сторінці так виглядає однаково в обох форматах.
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, w, h);
       ctx.drawImage(img, 0, 0, w, h);
-      resolve(canvas.toDataURL("image/jpeg", quality));
+      // Якщо браузер не вміє кодувати WebP, toDataURL мовчки поверне PNG —
+      // тоді відкочуємось на JPEG.
+      const webp = canvas.toDataURL("image/webp", quality);
+      resolve(
+        webp.startsWith("data:image/webp")
+          ? webp
+          : canvas.toDataURL("image/jpeg", 0.82),
+      );
     };
     img.onerror = () => {
       URL.revokeObjectURL(url);

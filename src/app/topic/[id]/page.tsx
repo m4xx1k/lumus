@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTopic } from "@/lib/db";
+import { decodeSlug } from "@/lib/topics";
 import TopicView from "./TopicView";
 
 export const dynamic = "force-dynamic";
@@ -10,8 +11,8 @@ export default async function TopicPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
-  const topic = await getTopic(id);
+  const { id: rawId } = await params;
+  const topic = await getTopic(decodeSlug(rawId));
   if (!topic) notFound();
 
   return (

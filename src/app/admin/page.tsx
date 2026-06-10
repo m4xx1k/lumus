@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { getAllTopics } from "@/lib/db";
+import { getTopicSummaries } from "@/lib/db";
 import { deleteTopicAction } from "./actions";
 import { logoutAction } from "./auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
-  const topics = await getAllTopics();
+  const topics = await getTopicSummaries();
 
   return (
     <main className="mx-auto w-full max-w-4xl px-5 py-8">
