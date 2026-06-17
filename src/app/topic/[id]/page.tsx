@@ -30,7 +30,7 @@ export default async function TopicPage({
           <img
             src={topic.imageUrl}
             alt={topic.title}
-            className="mb-5 h-48 w-full rounded-2xl object-cover"
+            className="mb-5 h-48 w-full rounded-2xl object-contain"
           />
         )}
         <h1 className="font-display flex items-center gap-3 text-3xl font-extrabold sm:text-4xl">

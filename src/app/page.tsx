@@ -96,7 +96,7 @@ export default async function Home() {
                     <img
                       src={topic.imageUrl}
                       alt={topic.title}
-                      className="h-36 w-full object-cover"
+                      className="h-36 w-full object-contain"
                     />
                   ) : (
                     <div className="flex h-36 w-full items-center justify-center bg-gradient-to-br from-brand-100 to-brand-200 text-5xl">
